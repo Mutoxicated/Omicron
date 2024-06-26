@@ -115,7 +115,7 @@ impl<T: TokenEnum> Lexer<T> {
             // custom tokens
             if T::out(self) {
                 self.buffer.clear();
-                continue;
+                continue
             }
 
             if !self.buffer.is_empty() {
@@ -133,7 +133,7 @@ impl<T: TokenEnum> Lexer<T> {
                 let token = Token::new(TokenType::Number, string.as_str(), self.index, self.line);
                 self.buffer.clear();
                 self.tokens.push(token);
-                continue;
+                continue
             }
             
             let c = self.consume();
