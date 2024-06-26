@@ -2,7 +2,7 @@ use std::{fmt::Display, hash::Hasher};
 
 use super::Lexer;
 
-pub trait TokenEnum: Display + Clone + PartialEq + Eq + Hasher {
+pub trait TokenEnum: Display + Clone + PartialEq + Eq {
     fn out(lexer:&mut Lexer<Self>) -> bool
     where Self: Sized;
 }
