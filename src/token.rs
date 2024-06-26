@@ -15,14 +15,18 @@ pub enum TokenType<T> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token<T: TokenEnum> {
     r#type: TokenType<T>,
-    content: String
+    content: String,
+    index:usize,
+    line:usize,
 }
 
 impl<T: TokenEnum> Token<T> {
-    pub fn new(r#type: TokenType<T>, content: &str) -> Self {
+    pub fn new(r#type: TokenType<T>, content: &str, index:usize, line:usize) -> Self {
         Self {
             r#type,
-            content: content.to_owned()
+            content: content.to_owned(),
+            index,
+            line
         }
     }
 
@@ -32,5 +36,13 @@ impl<T: TokenEnum> Token<T> {
 
     pub fn content(&self) -> &str {
         self.content.as_str()
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
     }
 }
