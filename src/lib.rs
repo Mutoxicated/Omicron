@@ -19,7 +19,7 @@ macro_rules! char_token {
         if $access.buf[$access.index] == $ch {
             let char = $access.consume();
             $access.add_token(
-                $t, char.to_string().as_str(), $access.index, $access.line
+                $t, char.to_string().as_str(), $access.index(), $access.line()
             );
             $($exit)*
         }
@@ -28,7 +28,7 @@ macro_rules! char_token {
         if $access.buf[$access.index] == $ch {
             let char = $access.consume();
             $access.add_token(
-                $t, char.to_string().as_str(), $access.index, $access.line
+                $t, char.to_string().as_str(), $access.index(), $access.line()
             );
             continue;
         }
@@ -39,14 +39,14 @@ macro_rules! keyword_token {
     ($access:ident, $keyword:expr, $t:expr) => {
         if $access.read_buffer() == $keyword {
             $access.add_token(
-                $t, $keyword, $access.index, $access.line
+                $t, $keyword, $access.index(), $access.line()
             );
         }
     };
     ($access:ident, $keyword:expr, $t:expr, $($exit:tt)*) => {
         if $access.read_buffer() == $keyword {
             $access.add_token(
-                $t, $keyword, $access.index, $access.line
+                $t, $keyword, $access.index(), $access.line()
             );
             $($exit)*
         }
@@ -157,5 +157,13 @@ impl<T: TokenEnum> Lexer<T> {
         let char = self.buf[self.index];
         self.index += 1;
         char
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
     }
 }
