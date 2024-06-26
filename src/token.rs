@@ -1,6 +1,18 @@
+use std::{fmt::Display, hash::Hasher};
+
 use super::Lexer;
 
-pub trait TokenEnum: Clone + PartialEq {
+#[macro_export]
+macro_rules! CustomTokenEnum {
+    ($name:ident; $( $t:tt ),*) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum $name {
+            $( $t ),*
+        }
+    };
+}
+
+pub trait TokenEnum: Display + Clone + PartialEq + Eq + Hasher {
     fn out(lexer:&mut Lexer<Self>) -> bool
     where Self: Sized;
 }
