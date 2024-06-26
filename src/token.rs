@@ -3,7 +3,7 @@ use std::{fmt::Display, hash::Hasher};
 use super::Lexer;
 
 #[macro_export]
-macro_rules! CustomTokenEnum {
+macro_rules! custom_token_enum {
     ($name:ident; $( $t:tt ),*) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum $name {
