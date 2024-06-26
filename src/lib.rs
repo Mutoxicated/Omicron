@@ -4,6 +4,16 @@ use token::{TokenEnum, Token, TokenType};
 pub mod token;
 
 #[macro_export]
+macro_rules! custom_token_enum {
+    ($name:ident; $( $t:tt ),*) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum $name {
+            $( $t ),*
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! char_token {
     ($access:ident, $ch:expr, $t:expr, $(exit:tt)*) => {
         if $access.buf[$access.index] == $ch {
