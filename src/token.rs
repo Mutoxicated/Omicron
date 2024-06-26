@@ -12,6 +12,8 @@ macro_rules! custom_token_enum {
     };
 }
 
+pub use custom_token_enum;
+
 pub trait TokenEnum: Display + Clone + PartialEq + Eq + Hasher {
     fn out(lexer:&mut Lexer<Self>) -> bool
     where Self: Sized;
