@@ -15,7 +15,7 @@ macro_rules! custom_token_enum {
 
 #[macro_export]
 macro_rules! char_token {
-    ($access:ident, $ch:expr, $t:expr, $(exit:tt)*) => {
+    ($access:ident, $ch:expr, $t:expr; $($exit:tt)*) => {
         if $access.buf[$access.index] == $ch {
             let char = $access.consume();
             $access.push(char);
@@ -26,28 +26,10 @@ macro_rules! char_token {
             $($exit)*
         }
     };
-    ($access:ident, $ch:expr, $t:expr) => {
-        if $access.buf[$access.index] == $ch {
-            let char = $access.consume();
-            $access.push(char);
-            $access.add_token(
-                $t, char.to_string().as_str()
-            );
-            $access.clear();
-            continue;
-        }
-    };
 }
 #[macro_export]
 macro_rules! keyword_token {
-    ($access:ident, $keyword:expr, $t:expr) => {
-        if $access.read_buffer() == $keyword {
-            $access.add_token(
-                $t, $keyword
-            );
-        }
-    };
-    ($access:ident, $keyword:expr, $t:expr, $($exit:tt)*) => {
+    ($access:ident, $keyword:expr, $t:expr; $($exit:tt)*) => {
         if $access.read_buffer() == $keyword {
             $access.add_token(
                 $t, $keyword
@@ -59,22 +41,46 @@ macro_rules! keyword_token {
 
 #[macro_export]
 macro_rules! peek_check {
-    ($access:ident, $name:tt; $t:tt) => {
+    ($access:ident, $name:tt; $($exit:tt)+) => {
         let res = $access.peek();
         if res.is_none() {
-            $t
+            $($exit)+
         }
         let $name = res.unwrap();
     };
 }
 #[macro_export]
 macro_rules! consume_check {
-    ($access:ident, $( [ $m:tt ] )? $name:ident; $t:tt) => {
+    ($access:ident, $( [ $m:tt ] )? $name:ident; $($exit:tt)+) => {
         let res = $access.peek();
         if res.is_none() {
-            $t
+            $($exit)+
         }
         let $($m)? $name = res.unwrap();
+    };
+}
+
+#[macro_export]
+macro_rules! lexy {
+    ($access:ident; $($exit:tt)+) => {
+        peek_check!($access, peek; $($exit)+);
+
+        if peek.is_alphabetic() {
+            consume_check!($access, char; break);
+            $access.push(char);
+            conditional_token!($access, is_ascii, [!]is_ascii_control; $($exit)+);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! conditional_token {
+    ($access:ident, $( $( [$t:tt] )? $cond:ident),*; $($exit:tt)+) => {
+        peek_check!($access, peek; break);
+        while $( $($t)? peek.$cond() ) && * {
+            consume_check!($access, char; $($exit)+);
+            $access.push(char);
+        }
     };
 }
 
@@ -107,18 +113,7 @@ impl<T: TokenEnum> Lexer<T> {
 
     fn get_tokens(&mut self) {
  
-        macro_rules! conditional_token {
-            ($( $( [$t:tt] )? $cond:ident ),*) => {
-                peek_check!(self, peek; break);
-                while $( $($t)? peek.$cond() ) && * {
-                    consume_check!(self, char; break);
-                    self.buffer.push(char);
-                    if self.index >= self.buf.len() {
-                        break
-                    }
-                }
-            };
-        }
+
 
         
 
@@ -152,13 +147,8 @@ impl<T: TokenEnum> Lexer<T> {
                 continue
             }
 
-            peek_check!(self, peek; break);
     
-            if peek.is_alphabetic() {
-                consume_check!(self, char; break);
-                self.push(char);
-                conditional_token!(is_ascii, [!]is_ascii_control);
-            }
+            lexy!(self; break);
 
             // custom tokens
             if T::lexy(self) {
@@ -181,7 +171,7 @@ impl<T: TokenEnum> Lexer<T> {
             if peek.is_alphanumeric() {
                 consume_check!(self, char; break);
                 self.push(char);
-                conditional_token!(is_alphanumeric);
+                conditional_token!(self, is_alphanumeric; break);
                 let string = self.read_buffer();
                 let token = Token::new(TokenType::Number, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.clear();
