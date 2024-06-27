@@ -113,7 +113,7 @@ impl<T: TokenEnum> Lexer<T> {
 
     fn get_tokens(&mut self) {
 
-        while self.index < self.buf.len() {
+        'a: while self.index < self.buf.len() {
             if self.index >= self.buf.len() {
                 break
             }
@@ -123,11 +123,11 @@ impl<T: TokenEnum> Lexer<T> {
             while consumed == ' ' {
                 let res = self.consume();
                 if res.is_none() {
-                    break
+                    break 'a
                 }
                 consumed = res.unwrap();
                 if self.index >= self.buf.len() {
-                    break
+                    break 'a
                 }
             }
 
@@ -143,6 +143,9 @@ impl<T: TokenEnum> Lexer<T> {
                 continue
             }
 
+            if self.index >= self.buf.len() {
+                break
+            }
     
             lexy!(self; break);
 
