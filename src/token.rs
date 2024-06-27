@@ -4,9 +4,7 @@ use super::Lexer;
 
 pub trait TokenEnum<E: Clone>: Clone + PartialEq + Eq {
     fn out(lexer:&mut Lexer<Self, E>) -> bool 
-    where Self: Sized {
-        false
-    }
+    where Self: Sized;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
