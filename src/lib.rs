@@ -201,6 +201,12 @@ impl<T: TokenEnum> Lexer<T> {
         self.buffer.push(c);
     }
 
+    pub fn push_str(&mut self, str:&str) {
+        for c in str.chars().collect::<Vec<char>>() {
+            self.push(c);
+        }
+    }
+
     pub fn clear(&mut self) {
         self.buffer.clear();
     }
