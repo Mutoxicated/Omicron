@@ -127,6 +127,9 @@ impl<T: TokenEnum> Lexer<T> {
                 let token = Token::new(TokenType::Lexy, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.buffer.clear();
                 self.tokens.push(token);
+                if self.index >= self.buf.len() {
+                    break
+                }
             }
     
             if self.buf[self.index].is_alphanumeric() {
