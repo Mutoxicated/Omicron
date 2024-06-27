@@ -78,8 +78,9 @@ macro_rules! conditional_token {
     ($access:ident, $( $( [$t:tt] )? $cond:ident),*; $($exit:tt)+) => {
         peek_check!($access, [mut] char; $($exit)+);
         while $( $($t)? char.$cond() ) && * {
-            $access.push(char);
             consume_check!($access, c; $($exit)+);
+            $access.push(c);
+            peek_check!($access, c; $($exit)+);
             char = c;
         }
     };
@@ -171,7 +172,7 @@ impl<T: TokenEnum> Lexer<T> {
             if peek.is_alphanumeric() {
                 consume_check!(self, char; break);
                 self.push(char);
-                conditional_token!(self, is_alphanumeric; break);
+                conditional_token!(self, is_alphanumeric; break 'a);
                 let string = self.read_buffer();
                 let token = Token::new(TokenType::Number, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.clear();
