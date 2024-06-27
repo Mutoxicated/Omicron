@@ -83,7 +83,7 @@ macro_rules! conditional_token {
 }
 
 pub struct Lexer<T: TokenEnum<State>, State: Clone> {
-    pub state: Option<State>,
+    pub state: State,
     buf: Vec<char>,
     index: usize,
     line:usize,
@@ -94,7 +94,7 @@ pub struct Lexer<T: TokenEnum<State>, State: Clone> {
 impl<T: TokenEnum<State>, State: Clone> Lexer<T, State> {
     pub fn with_state(buf: Vec<char>, state: State) -> Self {
         Self {
-            state: Some(state),
+            state,
             buf,
             index: 0,
             line:0,
@@ -232,18 +232,5 @@ impl<T: TokenEnum<State>, State: Clone> Lexer<T, State> {
         }
 
         Some(string)
-    }
-}
-
-impl<T: TokenEnum<State>, State:Clone> Lexer<T, State> {
-    pub fn new(buf: Vec<char>) -> Self {
-        Self {
-            state: None,
-            buf,
-            index: 0,
-            line:0,
-            tokens: Vec::new(),
-            buffer: Vec::new()
-        }
     }
 }
