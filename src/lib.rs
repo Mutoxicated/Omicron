@@ -88,7 +88,7 @@ impl<T: TokenEnum> Lexer<T> {
  
         macro_rules! conditional_token {
             ($( $( [$t:tt] )? $cond:ident ),*) => {
-                while $( $($t)? self.buf[self.index].$cond() ) && * {
+                while $( $($t)? self.peek().$cond() ) && * {
                     let char = self.consume();
                     self.buffer.push(char);
                     if self.index >= self.buf.len() {
@@ -99,7 +99,7 @@ impl<T: TokenEnum> Lexer<T> {
         }
 
         while self.index < self.buf.len() {
-            while self.buf[self.index] == ' ' {
+            while self.peek() == ' ' {
                 self.consume();
                 if self.index >= self.buf.len() {
                     break
@@ -118,7 +118,7 @@ impl<T: TokenEnum> Lexer<T> {
                 continue
             }
     
-            if self.buf[self.index].is_alphabetic() {
+            if self.peek().is_alphabetic() {
                 let char = self.consume();
                 self.push(char);
                 conditional_token!(is_ascii, [!]is_ascii_control);
@@ -140,7 +140,7 @@ impl<T: TokenEnum> Lexer<T> {
                 }
             }
     
-            if self.buf[self.index].is_alphanumeric() {
+            if self.peek().is_alphanumeric() {
                 let char = self.consume();
                 self.push(char);
                 conditional_token!(is_alphanumeric);
@@ -176,9 +176,13 @@ impl<T: TokenEnum> Lexer<T> {
         self.buffer.clear();
     }
 
-    fn consume(&mut self) -> char {
+    pub fn consume(&mut self) -> char {
         let char = self.buf[self.index];
         self.index += 1;
         char
+    }
+
+    pub fn peek(&self) -> char {
+        self.buf[self.index]
     }
 }
