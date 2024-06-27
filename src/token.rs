@@ -1,42 +1,39 @@
+use std::marker::PhantomData;
+
 use super::Lexer;
 
-pub trait TokenEnum: Clone + PartialEq + Eq {
-    fn lexy(lexer:&mut Lexer<Self>) -> bool
+pub trait TokenEnum<E: Clone>: Clone + PartialEq + Eq {
+    fn lexy(lexer:&mut Lexer<Self, E>) -> bool
     where Self: Sized {
         false
     }
-    fn special(lexer:&mut Lexer<Self>) -> bool 
+    fn special(lexer:&mut Lexer<Self, E>) -> bool 
     where Self: Sized {
         false
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TokenType<T> {
-    Lexy,
-    Number,
-    Custom(T)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Token<T: TokenEnum> {
-    r#type: TokenType<T>,
+pub struct Token<T: TokenEnum<E>, E: Clone> {
+    r#type: T,
     content: String,
     range:(usize, usize),
     line:usize,
+    _marker:PhantomData<E>
 }
 
-impl<T: TokenEnum> Token<T> {
-    pub fn new(r#type: TokenType<T>, content: &str, range:(usize, usize), line:usize) -> Self {
+impl<T: TokenEnum<E>, E: Clone> Token<T, E> {
+    pub fn new(r#type: T, content: &str, range:(usize, usize), line:usize) -> Self {
         Self {
             r#type,
             content: content.to_owned(),
             range,
-            line
+            line,
+            _marker: PhantomData
         }
     }
 
-    pub fn r#type(&self) -> TokenType<T> {
+    pub fn r#type(&self) -> T {
         self.r#type.clone()
     }
 

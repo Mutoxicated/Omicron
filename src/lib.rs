@@ -1,17 +1,7 @@
 use std::marker::PhantomData;
-use token::{TokenEnum, Token, TokenType};
+use token::{TokenEnum, Token};
 
 pub mod token;
-
-#[macro_export]
-macro_rules! custom_token_enum {
-    ($name:ident; $( $t:tt ),*) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-        pub enum $name {
-            $( $t ),*
-        }
-    };
-}
 
 #[macro_export]
 macro_rules! char_token {
@@ -58,6 +48,12 @@ macro_rules! consume_check {
         }
         let $($m)? $name = res.unwrap();
     };
+    ($access:ident, $( [ $m:tt ] )? _; $($exit:tt)+) => {
+        let res = $access.consume();
+        if res.is_none() {
+            $($exit)+
+        }
+    };
 }
 
 #[macro_export]
@@ -86,28 +82,28 @@ macro_rules! conditional_token {
     };
 }
 
-pub struct Lexer<T: TokenEnum> {
+pub struct Lexer<T: TokenEnum<State>, State: Clone> {
+    pub state: Option<State>,
     buf: Vec<char>,
     index: usize,
     line:usize,
-    tokens: Vec<Token<T>>,
-    buffer:  Vec<char>,
-    _marker: PhantomData<T>
+    tokens: Vec<Token<T, State>>,
+    buffer:  Vec<char>
 }
 
-impl<T: TokenEnum> Lexer<T> {
-    pub fn new(buf: Vec<char>) -> Self {
+impl<T: TokenEnum<State>, State: Clone> Lexer<T, State> {
+    pub fn with_state(buf: Vec<char>, state: State) -> Self {
         Self {
+            state: Some(state),
             buf,
             index: 0,
             line:0,
             tokens: Vec::new(),
-            buffer: Vec::new(),
-            _marker: PhantomData
+            buffer: Vec::new()
         }
     }
 
-    pub fn action(&mut self) -> Vec<Token<T>> {
+    pub fn action(&mut self) -> Vec<Token<T, State>> {
         self.get_tokens();
 
         self.tokens.clone()
@@ -123,7 +119,7 @@ impl<T: TokenEnum> Lexer<T> {
             peek_check!(self, [mut] peek; break);
 
             while peek == ' ' {
-                consume_check!(self, consumed; break 'a);
+                consume_check!(self, _; break 'a);
                 peek_check!(self, char; break 'a);
                 peek = char;
             }
@@ -153,28 +149,9 @@ impl<T: TokenEnum> Lexer<T> {
             }
 
             if !self.buffer.is_empty() {
-                let string = String::from_iter(&*self.buffer);
-                let token = Token::new(TokenType::Lexy, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.clear();
-                self.tokens.push(token);
-                if self.index >= self.buf.len() {
-                    break
-                }
             }
 
-            peek_check!(self, peek; break);
-    
-            if peek.is_alphanumeric() {
-                consume_check!(self, char; break);
-                self.push(char);
-                conditional_token!(self, is_alphanumeric; break 'a);
-                let string = self.read_buffer();
-                let token = Token::new(TokenType::Number, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
-                self.clear();
-                self.tokens.push(token);
-                continue
-            }
-            
             consume_check!(self, c; break);
             if c == '\n' {
                 self.line += 1;
@@ -182,7 +159,7 @@ impl<T: TokenEnum> Lexer<T> {
         }
     }
 
-    pub fn add_token(&mut self, r#type: TokenType<T>, str:&str) {
+    pub fn add_token(&mut self, r#type: T, str:&str) {
         self.tokens.push(
             Token::new(r#type, str, (self.index-self.buffer.len(), self.index), self.line)
         );
@@ -255,5 +232,18 @@ impl<T: TokenEnum> Lexer<T> {
         }
 
         Some(string)
+    }
+}
+
+impl<T: TokenEnum<State>, State:Clone> Lexer<T, State> {
+    pub fn new(buf: Vec<char>) -> Self {
+        Self {
+            state: None,
+            buf,
+            index: 0,
+            line:0,
+            tokens: Vec::new(),
+            buffer: Vec::new()
+        }
     }
 }
