@@ -18,18 +18,22 @@ macro_rules! char_token {
     ($access:ident, $ch:expr, $t:expr, $(exit:tt)*) => {
         if $access.buf[$access.index] == $ch {
             let char = $access.consume();
+            $access.push(char);
             $access.add_token(
                 $t, char.to_string().as_str()
             );
+            $access.clear();
             $($exit)*
         }
     };
     ($access:ident, $ch:expr, $t:expr) => {
         if $access.buf[$access.index] == $ch {
             let char = $access.consume();
+            $access.push(char);
             $access.add_token(
                 $t, char.to_string().as_str()
             );
+            $access.clear();
             continue;
         }
     };
@@ -98,8 +102,8 @@ impl<T: TokenEnum> Lexer<T> {
             while self.buf[self.index] == ' ' {
                 self.consume();
                 if self.index >= self.buf.len() {
-                break
-            }
+                    break
+                }
             }
 
             if self.index >= self.buf.len() {
@@ -120,7 +124,7 @@ impl<T: TokenEnum> Lexer<T> {
 
             if !self.buffer.is_empty() {
                 let string = String::from_iter(&*self.buffer);
-                let token = Token::new(TokenType::Lexy, string.as_str(), self.index, self.line);
+                let token = Token::new(TokenType::Lexy, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.buffer.clear();
                 self.tokens.push(token);
             }
@@ -130,7 +134,7 @@ impl<T: TokenEnum> Lexer<T> {
                 self.buffer.push(char);
                 conditional_token!(is_alphanumeric);
                 let string = self.read_buffer();
-                let token = Token::new(TokenType::Number, string.as_str(), self.index, self.line);
+                let token = Token::new(TokenType::Number, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
                 self.buffer.clear();
                 self.tokens.push(token);
                 continue
@@ -145,12 +149,20 @@ impl<T: TokenEnum> Lexer<T> {
 
     pub fn add_token(&mut self, r#type: TokenType<T>, str:&str) {
         self.tokens.push(
-            Token::new(r#type, str, self.index, self.line)
+            Token::new(r#type, str, (self.index-self.buffer.len(), self.index), self.line)
         );
     }
 
     pub fn read_buffer(&self) -> String {
         String::from_iter(&*self.buffer)
+    }
+
+    pub fn push(&mut self, c:char) {
+        self.buffer.push(c);
+    }
+
+    pub fn clear(&mut self) {
+        self.buffer.clear();
     }
 
     fn consume(&mut self) -> char {

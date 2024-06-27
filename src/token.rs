@@ -16,16 +16,16 @@ pub enum TokenType<T> {
 pub struct Token<T: TokenEnum> {
     r#type: TokenType<T>,
     content: String,
-    index:usize,
+    range:(usize, usize),
     line:usize,
 }
 
 impl<T: TokenEnum> Token<T> {
-    pub fn new(r#type: TokenType<T>, content: &str, index:usize, line:usize) -> Self {
+    pub fn new(r#type: TokenType<T>, content: &str, range:(usize, usize), line:usize) -> Self {
         Self {
             r#type,
             content: content.to_owned(),
-            index,
+            range,
             line
         }
     }
@@ -38,8 +38,8 @@ impl<T: TokenEnum> Token<T> {
         self.content.as_str()
     }
 
-    pub fn index(&self) -> usize {
-        self.index
+    pub fn index(&self) -> (usize, usize) {
+        self.range
     }
 
     pub fn line(&self) -> usize {
