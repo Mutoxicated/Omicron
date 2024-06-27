@@ -68,7 +68,7 @@ macro_rules! lexy {
         if peek.is_alphabetic() {
             consume_check!($access, char; $($exit)+);
             $access.push(char);
-            conditional_token!($access, is_ascii, [!]is_ascii_control; $($exit)+);
+            conditional_token!($access, is_ascii, [!]is_ascii_control, [!]is_whitespace; $($exit)+);
         }
     };
 }
@@ -144,7 +144,7 @@ impl<T: TokenEnum> Lexer<T> {
                 break
             }
     
-            lexy!(self; break);
+            self.try_lexy();
 
             // custom tokens
             if T::lexy(self) {
@@ -186,6 +186,12 @@ impl<T: TokenEnum> Lexer<T> {
         self.tokens.push(
             Token::new(r#type, str, (self.index-self.buffer.len(), self.index), self.line)
         );
+    }
+
+    pub fn try_lexy(&mut self) -> bool {
+        lexy!(self; return false);
+
+        true
     }
 
     pub fn read_buffer(&self) -> String {
