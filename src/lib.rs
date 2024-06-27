@@ -52,7 +52,7 @@ macro_rules! peek_check {
 #[macro_export]
 macro_rules! consume_check {
     ($access:ident, $( [ $m:tt ] )? $name:ident; $($exit:tt)+) => {
-        let res = $access.peek();
+        let res = $access.consume();
         if res.is_none() {
             $($exit)+
         }
