@@ -87,8 +87,8 @@ impl<T: TokenEnum> Lexer<T> {
     fn get_tokens(&mut self) {
  
         macro_rules! conditional_token {
-            ($cond:ident) => {
-                while self.buf[self.index].$cond() {
+            ($( $( [$t:tt] )? $cond:ident ),*) => {
+                while $( $($t)? self.buf[self.index].$cond() ) && * {
                     let char = self.consume();
                     self.buffer.push(char);
                     if self.index >= self.buf.len() {
@@ -113,7 +113,7 @@ impl<T: TokenEnum> Lexer<T> {
             if self.buf[self.index].is_alphabetic() {
                 let char = self.consume();
                 self.buffer.push(char);
-                conditional_token!(is_alphabetic);
+                conditional_token!(is_ascii);
             }
 
             // custom tokens
