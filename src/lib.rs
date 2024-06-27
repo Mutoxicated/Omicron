@@ -113,7 +113,7 @@ impl<T: TokenEnum> Lexer<T> {
             if self.buf[self.index].is_alphabetic() {
                 let char = self.consume();
                 self.buffer.push(char);
-                conditional_token!(is_ascii);
+                conditional_token!(is_ascii, [!]is_ascii_control);
             }
 
             // custom tokens
