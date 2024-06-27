@@ -41,12 +41,12 @@ macro_rules! keyword_token {
 
 #[macro_export]
 macro_rules! peek_check {
-    ($access:ident, $name:tt; $($exit:tt)+) => {
+    ($access:ident, $([ $m:tt ])? $name:ident; $($exit:tt)+) => {
         let res = $access.peek();
         if res.is_none() {
             $($exit)+
         }
-        let $name = res.unwrap();
+        let $($m)? $name = res.unwrap();
     };
 }
 #[macro_export]
@@ -76,7 +76,7 @@ macro_rules! lexy {
 #[macro_export]
 macro_rules! conditional_token {
     ($access:ident, $( $( [$t:tt] )? $cond:ident),*; $($exit:tt)+) => {
-        consume_check!($access, [mut] char; $($exit)+);
+        peek_check!($access, [mut] char; $($exit)+);
         while $( $($t)? char.$cond() ) && * {
             $access.push(char);
             consume_check!($access, c; $($exit)+);
@@ -213,6 +213,16 @@ impl<T: TokenEnum> Lexer<T> {
         Some(char)
     }
 
+    pub fn consume_str(&mut self, len:usize) -> Option<String> {
+        let mut string = String::new();
+        for _ in 0..len {
+            consume_check!(self, char; return None);
+            string.push(char);
+        }
+
+        Some(string)
+    }
+
     pub fn peek(&self) -> Option<char> {
         if self.index > self.buf.len()-1 {
             return None
@@ -227,22 +237,15 @@ impl<T: TokenEnum> Lexer<T> {
         Some(self.buf[self.index+offset])
     }
 
-    pub fn peek_str(&mut self, str:&str) -> bool {
-        let mut index = 0;
-        for c in str.chars().collect::<Vec<char>>() {
-            let res = self.peek_off(index);
-            if res.is_none() {
-                return false
-            }
-            let peek = res.unwrap();
-            if peek != c {
-                return false
-            }else {
-                self.push(c);
-                index += 1;
-            }
+    pub fn peek_str(&self, len:usize) -> Option<String> {
+        let mut string = String::new();
+        for i in 0..len {
+            let char = self.peek_off(i);
+            char?;
+            let char = char.unwrap();
+            string.push(char);
         }
-        
-        true
+
+        Some(string)
     }
 }
