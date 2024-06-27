@@ -76,10 +76,11 @@ macro_rules! lexy {
 #[macro_export]
 macro_rules! conditional_token {
     ($access:ident, $( $( [$t:tt] )? $cond:ident),*; $($exit:tt)+) => {
-        peek_check!($access, peek; $($exit)+);
-        while $( $($t)? peek.$cond() ) && * {
-            consume_check!($access, char; $($exit)+);
+        consume_check!($access, [mut] char; $($exit)+);
+        while $( $($t)? char.$cond() ) && * {
             $access.push(char);
+            consume_check!($access, c; $($exit)+);
+            char = c;
         }
     };
 }
