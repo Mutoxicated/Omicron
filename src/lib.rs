@@ -120,17 +120,12 @@ impl<T: TokenEnum> Lexer<T> {
                 break
             }
 
-            consume_check!(self, [mut] consumed; break);
+            peek_check!(self, [mut] peek; break);
 
-            while consumed == ' ' {
-                let res = self.consume();
-                if res.is_none() {
-                    break 'a
-                }
-                consumed = res.unwrap();
-                if self.index >= self.buf.len() {
-                    break 'a
-                }
+            while peek == ' ' {
+                consume_check!(self, consumed; break 'a);
+                peek_check!(self, char; break 'a);
+                peek = char;
             }
 
             if self.index >= self.buf.len() {
