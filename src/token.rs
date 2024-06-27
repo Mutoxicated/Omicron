@@ -1,8 +1,12 @@
 use super::Lexer;
 
 pub trait TokenEnum: Clone + PartialEq + Eq {
-    fn out(lexer:&mut Lexer<Self>) -> bool
+    fn lexy(lexer:&mut Lexer<Self>) -> bool
     where Self: Sized;
+    fn special(lexer:&mut Lexer<Self>) -> bool 
+    where Self: Sized {
+        false
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -109,23 +109,31 @@ impl<T: TokenEnum> Lexer<T> {
             if self.index >= self.buf.len() {
                 break
             }
+
+            if T::special(self) {
+                self.clear();
+                if self.index >= self.buf.len() {
+                    break
+                }
+                continue
+            }
     
             if self.buf[self.index].is_alphabetic() {
                 let char = self.consume();
-                self.buffer.push(char);
+                self.push(char);
                 conditional_token!(is_ascii, [!]is_ascii_control);
             }
 
             // custom tokens
-            if T::out(self) {
-                self.buffer.clear();
+            if T::lexy(self) {
+                self.clear();
                 continue
             }
 
             if !self.buffer.is_empty() {
                 let string = String::from_iter(&*self.buffer);
                 let token = Token::new(TokenType::Lexy, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
-                self.buffer.clear();
+                self.clear();
                 self.tokens.push(token);
                 if self.index >= self.buf.len() {
                     break
@@ -134,11 +142,11 @@ impl<T: TokenEnum> Lexer<T> {
     
             if self.buf[self.index].is_alphanumeric() {
                 let char = self.consume();
-                self.buffer.push(char);
+                self.push(char);
                 conditional_token!(is_alphanumeric);
                 let string = self.read_buffer();
                 let token = Token::new(TokenType::Number, string.as_str(), (self.index-self.buffer.len(), self.index), self.line);
-                self.buffer.clear();
+                self.clear();
                 self.tokens.push(token);
                 continue
             }
