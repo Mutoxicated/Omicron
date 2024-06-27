@@ -3,11 +3,7 @@ use std::marker::PhantomData;
 use super::Lexer;
 
 pub trait TokenEnum<E: Clone>: Clone + PartialEq + Eq {
-    fn lexy(lexer:&mut Lexer<Self, E>) -> bool
-    where Self: Sized {
-        false
-    }
-    fn special(lexer:&mut Lexer<Self, E>) -> bool 
+    fn out(lexer:&mut Lexer<Self, E>) -> bool 
     where Self: Sized {
         false
     }

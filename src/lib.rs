@@ -128,7 +128,7 @@ impl<T: TokenEnum<State>, State: Clone> Lexer<T, State> {
                 break
             }
 
-            if T::special(self) {
+            if T::out(self) {
                 self.clear();
                 if self.index >= self.buf.len() {
                     break
@@ -140,14 +140,6 @@ impl<T: TokenEnum<State>, State: Clone> Lexer<T, State> {
                 break
             }
     
-            self.try_lexy();
-
-            // custom tokens
-            if T::lexy(self) {
-                self.clear();
-                continue
-            }
-
             if !self.buffer.is_empty() {
                 self.clear();
             }
