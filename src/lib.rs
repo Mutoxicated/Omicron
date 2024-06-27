@@ -66,7 +66,7 @@ macro_rules! lexy {
         peek_check!($access, peek; $($exit)+);
 
         if peek.is_alphabetic() {
-            consume_check!($access, char; break);
+            consume_check!($access, char; $($exit)+);
             $access.push(char);
             conditional_token!($access, is_ascii, [!]is_ascii_control; $($exit)+);
         }
@@ -76,7 +76,7 @@ macro_rules! lexy {
 #[macro_export]
 macro_rules! conditional_token {
     ($access:ident, $( $( [$t:tt] )? $cond:ident),*; $($exit:tt)+) => {
-        peek_check!($access, peek; break);
+        peek_check!($access, peek; $($exit)+);
         while $( $($t)? peek.$cond() ) && * {
             consume_check!($access, char; $($exit)+);
             $access.push(char);
@@ -112,10 +112,6 @@ impl<T: TokenEnum> Lexer<T> {
     }
 
     fn get_tokens(&mut self) {
- 
-
-
-        
 
         while self.index < self.buf.len() {
             if self.index >= self.buf.len() {
