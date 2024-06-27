@@ -8,18 +8,20 @@ pub enum TokenType {
     MacroEnd
 }
 
-impl TokenEnum<()> for TokenType {
-
-    fn out(lexer:&mut Lexer<Self, ()>) -> bool 
+impl TokenEnum<String> for TokenType {
+    fn out(lexer:&mut Lexer<Self, String>) -> bool 
         where Self: Sized {
 
-        let str = lexer.peek_str(2);
+        let comment_length = lexer.state.len();
+        let str = lexer.peek_str(comment_length);
         if str.is_none() {
             return false
         }
         let str = str.unwrap();
-        if str == "//" {
-            let string = lexer.consume_str(2);
+
+        let comment = lexer.state.clone();
+        if str == comment {
+            let string = lexer.consume_str(comment_length);
             if string.is_none() {
                 return false
             }
@@ -27,10 +29,10 @@ impl TokenEnum<()> for TokenType {
             lexer.push_str(string.as_str());
             lexer.try_lexy();
             let buf = lexer.read_buffer();
-            if buf == "//MACRO_START" {
-                lexer.add_token(    TokenType::MacroStart, buf.as_str());
+            if buf == comment.clone()+"MACRO_START" {
+                lexer.add_token(TokenType::MacroStart, buf.as_str());
                 return true
-            }else if buf == "//MACRO_END" {
+            }else if buf == comment+"MACRO_END" {
                 lexer.add_token(TokenType::MacroEnd, buf.as_str());
                 return true
             }
@@ -40,14 +42,13 @@ impl TokenEnum<()> for TokenType {
     }
 }
 
-
 fn main() {
     let mut file = File::open("./src/test.txt").unwrap();
     
     let mut string = String::new();
     let _ = file.read_to_string(&mut string);
 
-    let mut lexer:Lexer<TokenType, ()> = Lexer::with_state(string.chars().collect(), ());
+    let mut lexer:Lexer<TokenType, String> = Lexer::with_state(string.chars().collect(), "//".to_owned());
 
     let tokens = lexer.action();
 

@@ -1,5 +1,6 @@
-package helpers
 
-//MACRO_START
+public class ah {
+    //MACRO_START
 
-//MACRO_END
+    //MACRO_END
+}
