@@ -57,6 +57,27 @@ macro_rules! keyword_token {
     };
 }
 
+#[macro_export]
+macro_rules! peek_check {
+    ($access:ident, $name:tt; $t:tt) => {
+        let res = $access.peek();
+        if res.is_none() {
+            $t
+        }
+        let $name = res.unwrap();
+    };
+}
+#[macro_export]
+macro_rules! consume_check {
+    ($access:ident, $( [ $m:tt ] )? $name:ident; $t:tt) => {
+        let res = $access.peek();
+        if res.is_none() {
+            $t
+        }
+        let $($m)? $name = res.unwrap();
+    };
+}
+
 pub struct Lexer<T: TokenEnum> {
     buf: Vec<char>,
     index: usize,
@@ -88,8 +109,9 @@ impl<T: TokenEnum> Lexer<T> {
  
         macro_rules! conditional_token {
             ($( $( [$t:tt] )? $cond:ident ),*) => {
-                while $( $($t)? self.peek().$cond() ) && * {
-                    let char = self.consume();
+                peek_check!(self, peek; break);
+                while $( $($t)? peek.$cond() ) && * {
+                    consume_check!(self, char; break);
                     self.buffer.push(char);
                     if self.index >= self.buf.len() {
                         break
@@ -98,9 +120,21 @@ impl<T: TokenEnum> Lexer<T> {
             };
         }
 
+        
+
         while self.index < self.buf.len() {
-            while self.peek() == ' ' {
-                self.consume();
+            if self.index >= self.buf.len() {
+                break
+            }
+
+            consume_check!(self, [mut] consumed; break);
+
+            while consumed == ' ' {
+                let res = self.consume();
+                if res.is_none() {
+                    break
+                }
+                consumed = res.unwrap();
                 if self.index >= self.buf.len() {
                     break
                 }
@@ -117,9 +151,11 @@ impl<T: TokenEnum> Lexer<T> {
                 }
                 continue
             }
+
+            peek_check!(self, peek; break);
     
-            if self.peek().is_alphabetic() {
-                let char = self.consume();
+            if peek.is_alphabetic() {
+                consume_check!(self, char; break);
                 self.push(char);
                 conditional_token!(is_ascii, [!]is_ascii_control);
             }
@@ -139,9 +175,11 @@ impl<T: TokenEnum> Lexer<T> {
                     break
                 }
             }
+
+            peek_check!(self, peek; break);
     
-            if self.peek().is_alphanumeric() {
-                let char = self.consume();
+            if peek.is_alphanumeric() {
+                consume_check!(self, char; break);
                 self.push(char);
                 conditional_token!(is_alphanumeric);
                 let string = self.read_buffer();
@@ -151,7 +189,7 @@ impl<T: TokenEnum> Lexer<T> {
                 continue
             }
             
-            let c = self.consume();
+            consume_check!(self, c; break);
             if c == '\n' {
                 self.line += 1;
             }
@@ -176,13 +214,45 @@ impl<T: TokenEnum> Lexer<T> {
         self.buffer.clear();
     }
 
-    pub fn consume(&mut self) -> char {
+    pub fn consume(&mut self) -> Option<char> {
+        if self.index > self.buf.len()-1 {
+            return None
+        }
         let char = self.buf[self.index];
         self.index += 1;
-        char
+        Some(char)
     }
 
-    pub fn peek(&self) -> char {
-        self.buf[self.index]
+    pub fn peek(&self) -> Option<char> {
+        if self.index > self.buf.len()-1 {
+            return None
+        }
+        Some(self.buf[self.index])
+    }
+
+    pub fn peek_off(&self, offset:usize) -> Option<char> {
+        if self.index+offset > self.buf.len()-1 {
+            return None
+        }
+        Some(self.buf[self.index+offset])
+    }
+
+    pub fn peek_str(&mut self, str:&str) -> bool {
+        let mut index = 0;
+        for c in str.chars().collect::<Vec<char>>() {
+            let res = self.peek_off(index);
+            if res.is_none() {
+                return false
+            }
+            let peek = res.unwrap();
+            if peek != c {
+                return false
+            }else {
+                self.push(c);
+                index += 1;
+            }
+        }
+        
+        true
     }
 }
