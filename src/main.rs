@@ -1,45 +1,21 @@
 use std::{fs::File, io::Read};
 
-use lexer::{token::TokenEnum, Lexer};
+use lexer::{token::{ProcessType, TokenProcess}, Lexer, NewToken};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
-    MacroStart,
-    MacroEnd
+    SingelineComment,
+    Identifier,
+    Number,
 }
 
-impl TokenEnum<String> for TokenType {
-    fn out(lexer:&mut Lexer<Self, String>) -> bool 
-        where Self: Sized {
-
-        let comment_length = lexer.state.len();
-        let str = lexer.peek_str(comment_length);
-        if str.is_none() {
+pub fn is_alphanumerical(string:&str) -> bool {
+    for ch in string.chars() {
+        if !ch.is_alphanumeric() {
             return false
         }
-        let str = str.unwrap();
-
-        let comment = lexer.state.clone();
-        if str == comment {
-            let string = lexer.consume_str(comment_length);
-            if string.is_none() {
-                return false
-            }
-            let string = string.unwrap();
-            lexer.push_str(string.as_str());
-            lexer.try_lexy();
-            let buf = lexer.read_buffer();
-            if buf == comment.clone()+"MACRO_START" {
-                lexer.add_token(TokenType::MacroStart, buf.as_str());
-                return true
-            }else if buf == comment+"MACRO_END" {
-                lexer.add_token(TokenType::MacroEnd, buf.as_str());
-                return true
-            }
-        }
-
-        false
     }
+    true
 }
 
 fn main() {
@@ -48,7 +24,16 @@ fn main() {
     let mut string = String::new();
     let _ = file.read_to_string(&mut string);
 
-    let mut lexer:Lexer<TokenType, String> = Lexer::with_state(string.chars().collect(), "//".to_owned());
+    let mut lexer:Lexer<TokenType> = Lexer::new(
+        string.chars().collect(), 
+        vec![
+            NewToken!(TokenType::SingelineComment; '/', 2),
+            NewToken!(TokenType::Identifier; ProcessType::String),
+            NewToken!(TokenType::Number; x; {
+                x.is_alphanumeric()
+            }),
+        ]
+    );
 
     let tokens = lexer.action();
 
