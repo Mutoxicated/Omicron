@@ -49,5 +49,5 @@ You create a token process with the tokenProc! macro. Though in reality this cre
 ### Keywords
 Keywords match on the processed tokens to check if the contents match theirs. It is therefore assumed that, for keywords to work, you need to have some basic token processes like an identifier token.
 
-###More info
+### More info
 The project is documented with rust documentation comments, so whatever else you want, it's most likely either at the lib.rs or tokens.rs file!
