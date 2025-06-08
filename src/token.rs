@@ -11,14 +11,20 @@ impl<T> Token<T> {
     pub fn new(r#type:T, content: &str, range:(usize, usize), line:usize) -> Self {
         Self { r#type, content: content.to_owned(), range, line }
     }
+
+    pub fn content(&self) -> &str {
+        self.content.as_str()
+    }
+
+    pub fn change_type(&mut self, new_tt:T) {
+        self.r#type = new_tt;
+    }
 }
 
 pub enum ProcessType {
     KeepCollecting(Box<dyn Fn(char) -> bool>), 
     /// usize: the number of times the character is to be expected
     CharacterSpecific(char, usize),
-    /// for not-mixed numerical and non-numerical strings (but seperate, e.g. "wdoiahd", not "asd878asd")
-    String,
 }
 
 pub struct TokenProcess<T> where Self: Sized {

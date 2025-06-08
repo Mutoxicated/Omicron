@@ -1,100 +1,47 @@
+use std::collections::HashMap;
+
 use token::{ProcessType, Token, TokenProcess};
 
 pub mod token;
 
 pub struct Lexer<T: Clone> {
+    core: LexerCore<T>,
+    data: LexerData<T>
+}
+
+pub struct LexerData<T: Clone> {
+    conditionals:Vec<TokenProcess<T>>,
+    keywords: HashMap<String, T>
+}
+
+impl<T: Clone> LexerData<T> {
+    pub fn new(conditionals: Vec<TokenProcess<T>>) -> Self {
+        Self {
+            conditionals,
+            keywords:HashMap::new()
+        }
+    }
+}
+
+pub struct LexerCore<T: Clone> {
     buf: Vec<char>,
     index: usize,
     line:usize,
     tokens: Vec<Token<T>>,
     buffer:  Vec<char>,
-    conditionals:Vec<TokenProcess<T>>
 }
 
-impl<T: Clone> Lexer<T> {
-    pub fn new(buf: Vec<char>, tokens:Vec<TokenProcess<T>>) -> Self {
+impl<T: Clone> LexerCore<T> {
+    pub fn new(buf: Vec<char>) -> Self {
         Self {
             buf,
             index: 0,
             line:1,
             tokens: Vec::new(),
             buffer: Vec::new(),
-            conditionals:tokens
         }
     }
 
-    pub fn action(&mut self) -> Vec<Token<T>> {
-        self.get_tokens();
-
-        self.tokens.clone()
-    }
-
-    fn get_tokens(&mut self) {
-        use ProcessType::*;
-
-        while self.index < self.buf.len() {
-            if self.index >= self.buf.len() {
-                break
-            }
-
-            let c = self.peek().unwrap();
-            if c == '\n' {
-                self.line += 1;
-                self.index += 1;
-                continue
-            }
-            let mut noMatch = true;
-            for i in 0..self.conditionals.len() {
-                if let CharacterSpecific(x, y) = &self.conditionals[i].process_type {
-                    if c == *x {
-                        if self.consume_while(*x, *y) {
-                            self.add_token(self.conditionals[i].token_type.clone(), &self.read_buffer());
-                            self.clear();
-                            noMatch = false;
-                        }
-                    }
-                    continue
-                }
-
-                if let KeepCollecting(x) = &self.conditionals[i].process_type { 
-                    let mut counter = 0;
-                    let mut peek = self.peek();
-                    while let Some(ch) = peek {
-                        if !x(ch) {
-                            break
-                        }
-                        let c = self.peek();
-                        self.index += 1;
-                        counter += 1;
-                        self.buffer.push(c.unwrap());
-                        peek = self.peek();
-                    }
-                    if counter != 0 {
-                        self.add_token(self.conditionals[i].token_type.clone(), &self.read_buffer());
-                        self.clear();
-                        noMatch = false;
-                    }
-                    continue
-                }
-
-                if let String = &self.conditionals[i].process_type {
-                    let success = self.consume_while_condition(|c| {
-                        c.is_alphabetic()
-                    });
-                    if success {
-                        self.add_token(self.conditionals[i].token_type.clone(), &self.read_buffer());
-                        self.clear();
-                        noMatch = false;
-                    }
-                    continue
-                }
-            }
-            if noMatch {
-                self.index += 1;
-            }
-        }
-    }
-    
     fn consume_while_condition(&mut self, c:impl Fn(char) -> bool) -> bool {
         let mut counter = 0;
         let mut peek = self.peek();
@@ -139,10 +86,8 @@ impl<T: Clone> Lexer<T> {
         return c
     }
 
-    pub fn add_token(&mut self, r#type: T, str:&str) {
-        self.tokens.push(
-            Token::new(r#type, str, (self.index-self.buffer.len(), self.index), self.line)
-        );
+    pub fn new_token(&mut self, r#type: T, str:&str) -> Token<T>{
+        Token::new(r#type, str, (self.index-self.buffer.len(), self.index), self.line)
     }
 
     pub fn read_buffer(&self) -> String {
@@ -192,5 +137,89 @@ impl<T: Clone> Lexer<T> {
         }
 
         Some(string)
+    }
+
+    pub fn make_token(&mut self, data:&LexerData<T>) -> Option<Token<T>> {
+        let mut token:Option<Token<T>> = None;
+        data.conditionals.iter().for_each(|x| {
+            if let ProcessType::CharacterSpecific(a, e) = x.process_type {
+                if self.consume_while(a, e) {
+                    token = Some(self.new_token(x.token_type.clone(), &self.read_buffer()));
+                    self.clear();
+                }
+            }else if let ProcessType::KeepCollecting(a) = &x.process_type {
+                if self.consume_while_condition(a) {
+                    token = Some(self.new_token(x.token_type.clone(), &self.read_buffer()));
+                    self.clear();
+                }
+            }
+        });
+
+        token
+    }
+}
+
+impl<T: Clone> Lexer<T> {
+    pub fn new(buf: Vec<char>, tokens:Vec<TokenProcess<T>>) -> Self {
+        Self {
+            core: LexerCore::new(buf),
+            data: LexerData::new(tokens),
+        }
+    }
+
+    pub fn with_keywords(&mut self, keywords:HashMap<String, T>) {
+        self.data.keywords = keywords;
+    }
+
+    pub fn action(&mut self) -> Vec<Token<T>> {
+        self.get_tokens();
+
+        self.core.tokens.clone()
+    }
+
+    fn index(&self) -> usize {
+        self.core.index
+    }
+
+    fn buflen(&self) ->  usize {
+        self.core.buf.len()
+    }
+
+    fn peek(&self) ->  Option<char> {
+        self.core.peek()
+    }
+
+    fn get_tokens(&mut self) {
+        while self.index() < self.buflen() {
+            if self.index() >= self.buflen() {
+                break
+            }
+
+            let c = self.peek().unwrap();
+            if c == '\n' {
+                self.core.line += 1;
+                self.core.index += 1;
+                continue
+            }
+
+            let token:Option<Token<T>> = self.core.make_token(&self.data);
+
+            if token.is_none() {
+                self.core.index += 1;
+                continue
+            }
+            
+            let mut token = token.unwrap();
+
+            let tt = self.data.keywords.get(token.content());
+            if tt.is_none() {
+                self.core.tokens.push(token);
+                continue
+            }
+            let tt = tt.unwrap();
+
+            token.change_type(tt.clone());
+            self.core.tokens.push(token);
+        }
     }
 }

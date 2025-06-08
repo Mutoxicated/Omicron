@@ -7,15 +7,15 @@ pub enum TokenType {
     SingelineComment,
     Identifier,
     Number,
+    Key
 }
 
-pub fn is_alphanumerical(string:&str) -> bool {
-    for ch in string.chars() {
-        if !ch.is_alphanumeric() {
-            return false
-        }
-    }
-    true
+macro_rules! strhashmap {
+    ($( $e:expr => $e2:expr ),+) => {
+        [
+            $( ($e.to_owned(), $e2) ),*
+        ].iter().cloned().collect()
+    };
 }
 
 fn main() {
@@ -28,12 +28,15 @@ fn main() {
         string.chars().collect(), 
         vec![
             NewToken!(TokenType::SingelineComment; '/', 2),
-            NewToken!(TokenType::Identifier; ProcessType::String),
+            NewToken!(TokenType::Identifier; x; {
+                x.is_alphabetic() || x == '_' || x == '-'
+            }),
             NewToken!(TokenType::Number; x; {
                 x.is_alphanumeric()
             }),
         ]
     );
+    lexer.with_keywords(strhashmap!["key" => TokenType::Key]);
 
     let tokens = lexer.action();
 
