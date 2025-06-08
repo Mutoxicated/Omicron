@@ -9,7 +9,7 @@ pub struct Lexer<T: Clone> {
     data: LexerData<T>
 }
 
-pub struct LexerData<T: Clone> {
+struct LexerData<T: Clone> {
     conditionals:Vec<(T, TokenProcess)>,
     keywords: HashMap<String, T>
 }
@@ -23,7 +23,7 @@ impl<T: Clone> LexerData<T> {
     }
 }
 
-pub struct LexerCore<T: Clone> {
+struct LexerCore<T: Clone> {
     buf: Vec<char>,
     index: usize,
     line:usize,
@@ -94,19 +94,9 @@ impl<T: Clone> LexerCore<T> {
         String::from_iter(&*self.buffer)
     }
 
-    pub fn push(&mut self, c:char) {
-        self.buffer.push(c);
-    }
-
     pub fn push_consume(&mut self) {
         let c = self.consume();
         self.buffer.push(c.unwrap());
-    }
-
-    pub fn push_str(&mut self, str:&str) {
-        for c in str.chars().collect::<Vec<char>>() {
-            self.push(c);
-        }
     }
 
     pub fn clear(&mut self) {
@@ -118,25 +108,6 @@ impl<T: Clone> LexerCore<T> {
             return None
         }
         Some(self.buf[self.index])
-    }
-
-    pub fn peek_off(&self, offset:usize) -> Option<char> {
-        if self.index+offset > self.buf.len()-1 {
-            return None
-        }
-        Some(self.buf[self.index+offset])
-    }
-
-    pub fn peek_str(&self, len:usize) -> Option<String> {
-        let mut string = String::new();
-        for i in 0..len {
-            let char = self.peek_off(i);
-            char?;
-            let char = char.unwrap();
-            string.push(char);
-        }
-
-        Some(string)
     }
 
     pub fn make_token(&mut self, data:&LexerData<T>) -> Option<Token<T>> {

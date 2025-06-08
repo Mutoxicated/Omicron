@@ -22,7 +22,7 @@ impl<T> Token<T> {
     }
 }
 
-pub enum ProcessType where Self: Sized {
+pub enum ProcessType {
     /// the field in it is essentially a predicate 
     KeepCollecting(Box<dyn Fn(char) -> bool>), 
     /// usize: the number of times the character is to be expected
