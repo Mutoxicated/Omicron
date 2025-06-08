@@ -1,6 +1,6 @@
 # Omicron
 
-Omicron is a highly flexible lexer library written in rust and designed to be easily and quickly used. Part of its flexibility comes from the fact that the user can implement their own token type enum and link to each token a specific process that gives the lexer the conditions to create the token. 
+Omicron is a simple yet flexible lexer library written in rust and designed to be easily and quickly used. Part of its flexibility comes from the fact that the user can implement their own token type enum and link to each token a specific process that gives the lexer the conditions to create the token. 
 
 **The result:** the user can focus only on the token types and how they are processed, without having to actually write a whole lexer for it!
 
