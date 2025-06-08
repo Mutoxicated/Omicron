@@ -1,8 +1,9 @@
-/// T: the token type
+/// T: the token type implemented by the end user
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token<T> {
     r#type: T,
     content: String,
+    /// (column_end, column_start)
     range:(usize, usize),
     line:usize,
 }
