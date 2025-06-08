@@ -21,38 +21,55 @@ impl<T> Token<T> {
     }
 }
 
-pub enum ProcessType {
+pub enum ProcessType where Self: Sized {
+    /// the field in it is essentially a predicate 
     KeepCollecting(Box<dyn Fn(char) -> bool>), 
     /// usize: the number of times the character is to be expected
     CharacterSpecific(char, usize),
 }
 
-pub struct TokenProcess<T> where Self: Sized {
+pub struct TokenProcess {
     pub process_type: ProcessType,
-    pub token_type: T
 }
 
-impl<T> TokenProcess<T> {
-    pub fn new(token_type: T, process_type: ProcessType) -> Self {
+impl TokenProcess {
+    pub fn new(process_type: ProcessType) -> Self {
         Self{
             process_type,
-            token_type
         }
     }
 }
 
-/// example: 
+/// examples: 
 /// 
-/// NewToken!("//", ProcessType::CharacterSpecific(2))
+/// ```
+/// tokenProc!(TokenType::SinglineComment, '/', ProcessType::CharacterSpecific(2)) 
+/// // expands into: (TokenType::SinglineComment, TokenProcess::new(ProcessType::CharacterSpecific('/, 2)))
+/// 
+/// tokenProc!(TokenType::Identifier, x; { x.isAlphabetical() }) 
+/// // expands into: (TokenType::Identifier, TokenProcess::new(ProcessType::KeepCollecting(Box::new(|x| { x.isAlphabetical() }))))
+/// 
+/// ```
 #[macro_export]
-macro_rules! NewToken {
+macro_rules! tokenProc {
     ($tkt:expr; $t:expr, $size:expr) => {
-        TokenProcess::new($tkt, ProcessType::CharacterSpecific($t, $size))
+        ($tkt, TokenProcess::new(ProcessType::CharacterSpecific($t, $size)))
     };
     ($tkt:expr; $id:ident; $t:block) => {
-        TokenProcess::new($tkt, ProcessType::KeepCollecting(Box::new(|$id| $t)))
+        ($tkt, TokenProcess::new(ProcessType::KeepCollecting(Box::new(|$id| { $t }))))
     };
-    ($tkt:expr; $id:expr) => {
-        TokenProcess::new($tkt, $id)
+}
+
+/// example: 
+/// 
+/// ```
+/// keywords!("class" => TokenType::Class, "pub" => TokenType::Pub)
+/// ```
+#[macro_export]
+macro_rules! keywords {
+    ($( $e:expr => $e2:expr ),+) => {
+        [
+            $( ($e.to_owned(), $e2) ),*
+        ].iter().cloned().collect()
     };
 }

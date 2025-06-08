@@ -10,12 +10,12 @@ pub struct Lexer<T: Clone> {
 }
 
 pub struct LexerData<T: Clone> {
-    conditionals:Vec<TokenProcess<T>>,
+    conditionals:Vec<(T, TokenProcess)>,
     keywords: HashMap<String, T>
 }
 
 impl<T: Clone> LexerData<T> {
-    pub fn new(conditionals: Vec<TokenProcess<T>>) -> Self {
+    pub fn new(conditionals: Vec<(T, TokenProcess)>) -> Self {
         Self {
             conditionals,
             keywords:HashMap::new()
@@ -142,14 +142,14 @@ impl<T: Clone> LexerCore<T> {
     pub fn make_token(&mut self, data:&LexerData<T>) -> Option<Token<T>> {
         let mut token:Option<Token<T>> = None;
         data.conditionals.iter().for_each(|x| {
-            if let ProcessType::CharacterSpecific(a, e) = x.process_type {
+            if let ProcessType::CharacterSpecific(a, e) = x.1.process_type {
                 if self.consume_while(a, e) {
-                    token = Some(self.new_token(x.token_type.clone(), &self.read_buffer()));
+                    token = Some(self.new_token(x.0.clone(), &self.read_buffer()));
                     self.clear();
                 }
-            }else if let ProcessType::KeepCollecting(a) = &x.process_type {
+            }else if let ProcessType::KeepCollecting(a) = &x.1.process_type {
                 if self.consume_while_condition(a) {
-                    token = Some(self.new_token(x.token_type.clone(), &self.read_buffer()));
+                    token = Some(self.new_token(x.0.clone(), &self.read_buffer()));
                     self.clear();
                 }
             }
@@ -160,7 +160,7 @@ impl<T: Clone> LexerCore<T> {
 }
 
 impl<T: Clone> Lexer<T> {
-    pub fn new(buf: Vec<char>, tokens:Vec<TokenProcess<T>>) -> Self {
+    pub fn new(buf: Vec<char>, tokens:Vec<(T, TokenProcess)>) -> Self {
         Self {
             core: LexerCore::new(buf),
             data: LexerData::new(tokens),

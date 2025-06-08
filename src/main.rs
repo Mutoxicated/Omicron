@@ -1,21 +1,14 @@
 use std::{fs::File, io::Read};
 
-use lexer::{token::{ProcessType, TokenProcess}, Lexer, NewToken};
+use lexer::{token::{ProcessType, TokenProcess}, Lexer, tokenProc, keywords};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
-    SingelineComment,
+    SinglelineComment,
     Identifier,
     Number,
-    Key
-}
-
-macro_rules! strhashmap {
-    ($( $e:expr => $e2:expr ),+) => {
-        [
-            $( ($e.to_owned(), $e2) ),*
-        ].iter().cloned().collect()
-    };
+    Key,
+    Word
 }
 
 fn main() {
@@ -27,16 +20,16 @@ fn main() {
     let mut lexer:Lexer<TokenType> = Lexer::new(
         string.chars().collect(), 
         vec![
-            NewToken!(TokenType::SingelineComment; '/', 2),
-            NewToken!(TokenType::Identifier; x; {
+            tokenProc!(TokenType::SinglelineComment; '/', 2),
+            tokenProc!(TokenType::Identifier; x; {
                 x.is_alphabetic() || x == '_' || x == '-'
             }),
-            NewToken!(TokenType::Number; x; {
+            tokenProc!(TokenType::Number; x; {
                 x.is_alphanumeric()
             }),
         ]
     );
-    lexer.with_keywords(strhashmap!["key" => TokenType::Key]);
+    lexer.with_keywords(keywords!["key" => TokenType::Key, "word" => TokenType::Word]);
 
     let tokens = lexer.action();
 
