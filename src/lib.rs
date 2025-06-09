@@ -10,15 +10,13 @@ pub struct Lexer<T: Clone> {
 }
 
 struct LexerData<T: Clone> {
-    conditionals:Vec<(T, TokenProcess)>,
-    keywords: HashMap<String, T>
+    conditionals:Vec<(T, TokenProcess)>
 }
 
 impl<T: Clone> LexerData<T> {
     pub fn new(conditionals: Vec<(T, TokenProcess)>) -> Self {
         Self {
             conditionals,
-            keywords:HashMap::new()
         }
     }
 }
@@ -60,24 +58,29 @@ impl<T: Clone> LexerCore<T> {
         true
     }
 
-    fn consume_while(&mut self, c:char, len:usize) -> bool {
+    fn consume_string(&mut self, str:&str) -> bool {
+        if str.is_empty() {
+            return false
+        }
+
+        let chars:Vec<char> = str.chars().collect();
         let mut counter = 0;
         let mut peek = self.peek();
         while let Some(x) = peek {
-            if x != c {
+            if x != chars[counter] {
+                self.index -= counter;
+                self.clear();
                 return false
             }
             counter += 1;
             self.push_consume();
-            if counter >= len {
-                return true
-            }
             peek = self.peek();
+            if counter == chars.len() {
+                break
+            }
         }
-
-        self.index -= counter;
-        self.clear();
-        false
+   
+        true
     }
 
     fn consume(&mut self) -> Option<char> {
@@ -112,19 +115,21 @@ impl<T: Clone> LexerCore<T> {
 
     pub fn make_token(&mut self, data:&LexerData<T>) -> Option<Token<T>> {
         let mut token:Option<Token<T>> = None;
-        data.conditionals.iter().for_each(|x| {
-            if let ProcessType::CharacterSpecific(a, e) = x.1.process_type {
-                if self.consume_while(a, e) {
+        for x in &data.conditionals {
+            if let ProcessType::SpecificString(a) = &x.1.process_type {
+                if self.consume_string(a.as_str()) {
                     token = Some(self.new_token(x.0.clone(), &self.read_buffer()));
                     self.clear();
+                    break
                 }
             }else if let ProcessType::KeepCollecting(a) = &x.1.process_type {
                 if self.consume_while_condition(a) {
                     token = Some(self.new_token(x.0.clone(), &self.read_buffer()));
                     self.clear();
+                    break
                 }
             }
-        });
+        };
 
         token
     }
@@ -138,9 +143,6 @@ impl<T: Clone> Lexer<T> {
         }
     }
 
-    pub fn with_keywords(&mut self, keywords:HashMap<String, T>) {
-        self.data.keywords = keywords;
-    }
 
     pub fn action(&mut self) -> Vec<Token<T>> {
         self.get_tokens();
@@ -180,16 +182,7 @@ impl<T: Clone> Lexer<T> {
                 continue
             }
             
-            let mut token = token.unwrap();
-
-            let tt = self.data.keywords.get(token.content());
-            if tt.is_none() {
-                self.core.tokens.push(token);
-                continue
-            }
-            let tt = tt.unwrap();
-
-            token.change_type(tt.clone());
+            let token = token.unwrap();
             self.core.tokens.push(token);
         }
     }

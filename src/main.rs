@@ -20,7 +20,7 @@ fn main() {
     let mut lexer:Lexer<TokenType> = Lexer::new(
         string.chars().collect(), 
         vec![
-            tokenProc!(TokenType::SinglelineComment; '/', 2),
+            tokenProc!(TokenType::SinglelineComment; "//"),
             tokenProc!(TokenType::Identifier; x; {
                 x.is_alphabetic() || x == '_' || x == '-'
             }),
@@ -29,7 +29,6 @@ fn main() {
             }),
         ]
     );
-    lexer.with_keywords(keywords!["key" => TokenType::Key, "word" => TokenType::Word]);
 
     let tokens = lexer.action();
 

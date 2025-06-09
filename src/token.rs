@@ -25,8 +25,7 @@ impl<T> Token<T> {
 pub enum ProcessType {
     /// the field in it is essentially a predicate 
     KeepCollecting(Box<dyn Fn(char) -> bool>), 
-    /// usize: the number of times the character is to be expected
-    CharacterSpecific(char, usize),
+    SpecificString(String)
 }
 
 pub struct TokenProcess {
@@ -53,8 +52,8 @@ impl TokenProcess {
 /// ```
 #[macro_export]
 macro_rules! tokenProc {
-    ($tkt:expr; $t:expr, $size:expr) => {
-        ($tkt, TokenProcess::new(ProcessType::CharacterSpecific($t, $size)))
+    ($tkt:expr; $t:expr) => {
+        ($tkt, TokenProcess::new(ProcessType::SpecificString($t.to_owned())))
     };
     ($tkt:expr; $id:ident; $t:block) => {
         ($tkt, TokenProcess::new(ProcessType::KeepCollecting(Box::new(|$id| { $t }))))
