@@ -13,7 +13,7 @@ let mut lexer:Lexer<TokenType> = Lexer::new(
     file_contents,
     // the token processes
     vec![
-        tokenProc!(TokenType::SinglelineComment; '/', 2),
+        tokenProc!(TokenType::SinglelineComment; "//"),
         tokenProc!(TokenType::Identifier; x; {
             x.is_alphabetic() || x == '_' || x == '-'
         }),
@@ -22,8 +22,6 @@ let mut lexer:Lexer<TokenType> = Lexer::new(
         }),
     ]
 );
-// optional keyword processing
-lexer.with_keywords(keywords!["key" => TokenType::Key, "word" => TokenType::Word]);
 
 let tokens = lexer.action() // boom!
 ```
@@ -45,9 +43,6 @@ pub struct Token<T> {
 
 ### TokenProcess
 You create a token process with the tokenProc! macro. Though in reality this creates a tuple of type (T, TokenProcess), thus linking the specified process with the given token type.
-
-### Keywords
-Keywords match on the processed tokens to check if the contents match theirs. It is therefore assumed that, for keywords to work, you need to have some basic token processes like an identifier token.
 
 ### More info
 The project is documented with rust documentation comments, so whatever else you want, it's most likely either at the lib.rs or tokens.rs file!
